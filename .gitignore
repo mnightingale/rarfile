@@ -19,3 +19,6 @@ tmp
 doc/_build
 doc/html
 cover
+uv.lock
+src/rarfile/*.so
+src/rarfile/*.pyd

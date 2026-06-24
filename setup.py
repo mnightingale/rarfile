@@ -1,37 +1,26 @@
 """Setup script for rarfile.
 """
 
-import re
+from setuptools import setup, Extension
 
-from setuptools import setup
+def description_short():
+    with open("README.rst") as readme:
+        ldesc = readme.read().strip()
+        sdesc = ldesc.split('\n')[0].split(' - ')[1].strip()
+        return sdesc
 
-vrx = r"""^__version__ *= *['"]([^'"]+)['"]"""
-src = open("rarfile.py").read()
-ver = re.search(vrx, src, re.M).group(1)
-
-ldesc = open("README.rst").read().strip()
-sdesc = ldesc.split('\n')[0].split(' - ')[1].strip()
+def description_long():
+    with open("README.rst") as readme:
+        return readme.read().strip()
 
 setup(
-    name="rarfile",
-    version=ver,
-    description=sdesc,
-    long_description=ldesc,
-    author="Marko Kreen",
-    license="ISC",
-    author_email="markokr@gmail.com",
-    url="https://github.com/markokr/rarfile",
-    py_modules=['rarfile'],
-    keywords=['rar', 'unrar', 'archive'],
-    python_requires=">=3.10",
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: ISC License (ISCL)",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: System :: Archiving :: Compression",
-    ]
+    description=description_short(),
+    long_description=description_long(),
+    ext_modules=[
+        Extension(
+            name="rarfile._rarfile",
+            sources=["src/rarfile/rarfile.c"],
+        ),
+    ],
 )
 
