@@ -86,13 +86,8 @@ PyObject* rar3_sha1_loop(PyObject *self, PyObject *args)
     Py_ssize_t seed_len = seed_view.len;
 
     /* reusable 3-byte object */
-    PyObject *cnt = PyByteArray_FromStringAndSize(NULL, 3);
-    if (!cnt) {
-        PyBuffer_Release(&seed_view);
-        return NULL;
-    }
+    char cnt[3];
 
-    char *cnt_ptr = PyByteArray_AS_STRING(cnt);
     unsigned char iv = 0;
     PyObject *result;
     PyObject *d;
@@ -113,7 +108,7 @@ PyObject* rar3_sha1_loop(PyObject *self, PyObject *args)
         goto error;
 
     for (unsigned int j = 0; j < 0x4000; ++j) {
-        result = PyObject_CallOneArg(update, seed);
+        result = PyObject_CallFunctionObjArgs(update, seed, NULL);
         if (!result)
             goto error;
         Py_DECREF(result);
@@ -136,11 +131,16 @@ PyObject* rar3_sha1_loop(PyObject *self, PyObject *args)
 
         const unsigned int x = base + j;
 
-        cnt_ptr[0] = x & 0xff;
-        cnt_ptr[1] = (x >> 8) & 0xff;
-        cnt_ptr[2] = (x >> 16) & 0xff;
+        cnt[0] = x & 0xff;
+        cnt[1] = (x >> 8) & 0xff;
+        cnt[2] = (x >> 16) & 0xff;
 
-        result = PyObject_CallOneArg(update, cnt);
+        PyObject *pycnt = PyBytes_FromStringAndSize(cnt, 3);
+        if (!pycnt)
+            goto error;
+
+        result = PyObject_CallFunctionObjArgs(update, pycnt, NULL);
+        Py_DECREF(pycnt);
         if (!result)
             goto error;
         Py_DECREF(result);
@@ -149,18 +149,18 @@ PyObject* rar3_sha1_loop(PyObject *self, PyObject *args)
         nbytes += 3;
 
         if (j == 0) {
-            d = PyObject_CallNoArgs(digest);
+            d = PyObject_CallFunctionObjArgs(digest, NULL);
             if (!d)
                 goto error;
 
-            if (!PyBytes_Check(d) || PyBytes_GET_SIZE(d) != 20)
+            if (!PyBytes_Check(d) || PyBytes_Size(d) != 20)
             {
                 Py_DECREF(d);
                 PyErr_SetString(PyExc_RuntimeError, "digest() did not return SHA1 bytes");
                 goto error;
             }
 
-            iv = (unsigned char)(PyBytes_AS_STRING(d)[19]);
+            iv = (unsigned char)(PyBytes_AsString(d)[19]);
             Py_DECREF(d);
         }
     }
