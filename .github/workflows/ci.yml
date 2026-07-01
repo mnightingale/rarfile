@@ -36,38 +36,43 @@ jobs:
 
   test:
     name: |
-      Test - ${{ matrix.pick.OS }} / ${{ matrix.pick.PYNAME }}${{
-        matrix.pick.CRYPTO != '' && format(' / {0}', matrix.pick.CRYPTO) || ''
+      Test - ${{ matrix.os }} / ${{ matrix.python-version }}${{
+        matrix.crypto != '' && format(' / {0}', matrix.crypto) || ''
       }}
-    runs-on: ${{matrix.pick.OS}}
+    runs-on: ${{matrix.os}}
     strategy:
       fail-fast: false
       matrix:
-        pick:
-          - {OS: "ubuntu-latest", PY: "3.9", PYNAME: "Python 3.9", CRYPTO: ""}
-          - {OS: "ubuntu-latest", PY: "3.9", PYNAME: "Python 3.9", CRYPTO: "pycryptodome"}
-          - {OS: "ubuntu-latest", PY: "3.10", PYNAME: "Python 3.10", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "3.11", PYNAME: "Python 3.11", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "3.12", PYNAME: "Python 3.12", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "3.13", PYNAME: "Python 3.13", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "3.14", PYNAME: "Python 3.14", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "pypy3.9", PYNAME: "PyPy3.9", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "pypy3.10", PYNAME: "PyPy3.10", CRYPTO: "cryptography"}
-          - {OS: "ubuntu-latest", PY: "pypy3.11", PYNAME: "PyPy3.11", CRYPTO: "cryptography"}
-          - {OS: "macos-latest", PY: "3.9", PYNAME: "Python 3.9", CRYPTO: "pycryptodome"}
-          - {OS: "macos-latest", PY: "3.10", PYNAME: "Python 3.10", CRYPTO: "cryptography"}
-          - {OS: "windows-latest", PY: "3.9", PYNAME: "Python 3.9", CRYPTO: "cryptography"}
-          - {OS: "windows-latest", PY: "3.10", PYNAME: "Python 3.10", CRYPTO: "cryptography"}
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14' ]
+        crypto: [ 'cryptography' ]
+        include:
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+            crypto: ''
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+            crypto: 'pycryptodome'
+          - os: 'ubuntu-latest'
+            python-version: 'pypy3.9'
+            crypto: 'cryptography'
+          - os: 'ubuntu-latest'
+            python-version: 'pypy3.10'
+            crypto: 'cryptography'
+          - os: 'ubuntu-latest'
+            python-version: 'pypy3.11'
+            crypto: 'cryptography'
+
     steps:
       - name: "Checkout"
         uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
 
-      - name: "Setup ${{matrix.pick.PYNAME}}"
+      - name: "Setup Python"
         uses: actions/setup-python@v6
         with:
-          python-version: ${{matrix.pick.PY}}
+          python-version: ${{matrix.python-version}}
 
       - name: "Install archivers (linux)"
         if: ${{runner.os == 'Linux'}}
@@ -104,4 +109,4 @@ jobs:
 
       - name: Run tests
         run: |
-          just test "${{ matrix.pick.PY }}" "${{ matrix.pick.CRYPTO }}"
+          just test "${{ matrix.python-version }}" "${{ matrix.crypto }}"
