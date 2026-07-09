@@ -64,6 +64,7 @@ from pathlib import Path
 from struct import Struct, pack, unpack
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from tempfile import mkstemp
+from functools import lru_cache
 
 AES = None
 
@@ -736,7 +737,7 @@ class RarFile:
         """
         self._password = pwd
         if self._file_parser:
-            if self._file_parser.has_header_encryption():
+            if self._file_parser.has_header_encryption() or self.needs_password():
                 self._file_parser = None
         if not self._file_parser:
             self._parse()
@@ -940,6 +941,8 @@ class RarFile:
 
         self._file_parser.parse()
         self.comment = self._file_parser.comment
+        if self._file_parser._password_error is not None:
+            raise self._file_parser._password_error
 
     def _extract_one(self, info, path, pwd, set_attrs):
         fname = sanitize_filename(
@@ -1049,6 +1052,7 @@ class CommonParser:
     _main = None
     _hdrenc_main = None
     _needs_password = False
+    _password_error = None
     _fd = None
     _expect_sig = None
     _parse_error = None
@@ -2049,6 +2053,8 @@ class RAR5Parser(CommonParser):
             raise RarWrongPassword()
 
     def _parse_encryption_block(self, h, hdata, pos):
+        self._hdrenc_main = h
+        self._needs_password = True
         h.encryption_algo, pos = load_vint(hdata, pos)
         h.encryption_flags, pos = load_vint(hdata, pos)
         h.encryption_kdf_count, pos = load_byte(hdata, pos)
@@ -2059,7 +2065,6 @@ class RAR5Parser(CommonParser):
             raise BadRarFile("Unsupported header encryption cipher")
         if h.encryption_check_value and self._password:
             self._check_password(h.encryption_check_value, h.encryption_kdf_count, h.encryption_salt)
-        self._hdrenc_main = h
         return h
 
     def _process_file_extra(self, h, xdata):
@@ -2118,6 +2123,11 @@ class RAR5Parser(CommonParser):
         checkval = None
         if flags & RAR5_XENC_CHECKVAL:
             checkval, pos = load_bytes(xdata, 12, pos)
+            if self._password and self._password_error is None:
+                try:
+                    self._check_password(checkval, kdf_count, salt)
+                except RarWrongPassword as e:
+                    self._password_error = e
         if flags & RAR5_XENC_TWEAKED:
             h._md_expect = None
             h._md_class = NoHashContext
@@ -3107,6 +3117,7 @@ def is_filelike(obj):
     return True
 
 
+@lru_cache()
 def rar5_s2k(pwd, salt, kdf_count):
     """String-to-key hash for RAR5.
     """
@@ -3117,6 +3128,7 @@ def rar5_s2k(pwd, salt, kdf_count):
     return pbkdf2_hmac("sha256", ustr, salt, kdf_count)
 
 
+@lru_cache()
 def rar3_s2k(pwd, salt):
     """String-to-key hash for RAR3.
     """

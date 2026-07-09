@@ -93,11 +93,38 @@ def test_rar5_header_encryption():
     assert r.comment is None
     assert r.namelist() == []
 
+    with pytest.raises(rarfile.RarWrongPassword):
+        r.setpassword("password222")
+    assert r.needs_password() is True
+
     r.setpassword("password")
     assert r.needs_password() is True
     assert r.namelist() == ["stest1.txt", "stest2.txt"]
     assert r.comment is not None
     assert r.comment == "RAR5 archive - hdr-password\n"
+    r.close()
+
+
+@pytest.mark.skipif(not rarfile._have_crypto, reason="No crypto")
+def test_rar5_file_encryption():
+    r = rarfile.RarFile("test/files/rar5-psw.rar")
+    assert r.needs_password() is True
+    assert r.comment is not None
+    assert r.comment == "RAR5 archive - nohdr-password\n"
+    assert r.namelist() == ["stest1.txt", "stest2.txt"]
+
+    with pytest.raises(rarfile.RarWrongPassword):
+        r.setpassword("password222")
+    assert r.needs_password() is True
+    assert r.namelist() == ["stest1.txt", "stest2.txt"]
+    assert r.comment is not None
+    assert r.comment == "RAR5 archive - nohdr-password\n"
+
+    r.setpassword("password")
+    assert r.needs_password() is True
+    assert r.namelist() == ["stest1.txt", "stest2.txt"]
+    assert r.comment is not None
+    assert r.comment == "RAR5 archive - nohdr-password\n"
     r.close()
 
 
