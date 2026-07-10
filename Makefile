@@ -30,7 +30,7 @@ all: lint docs test
 
 test:
 	uv venv --python $(PYTHON) --clear
-	$(ABI3_ENV) uv sync --group test $(CRYPTO_FLAG) --reinstall-package rarfile
+	$(ABI3_ENV) uv sync --group test $(CRYPTO_FLAG) --reinstall-package rarfile-native
 	uv run --no-sync pytest -n auto --cov=rarfile --cov-report=term --cov-report=html:cover/$(TESTTAG)
 	uv run --no-sync bash test/run_dump.sh python "$(TESTTAG)"
 
@@ -49,7 +49,7 @@ lint:
 
 docs:
 	uv venv --python $(PYTHON) --clear
-	uv sync --group docs --reinstall-package rarfile
+	uv sync --group docs --reinstall-package rarfile-native
 	uv run --no-sync sphinx-build -q -W -b html doc doc/_build
 
 clean:
