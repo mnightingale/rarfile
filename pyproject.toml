@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 dynamic = ["version", "description", "readme"]
-name = "rarfile"
+name = "rarfile-native"
 requires-python = ">=3.10"
 authors = [
     {name = "Marko Kreen", email = "markokr@gmail.com"},

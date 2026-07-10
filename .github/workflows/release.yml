@@ -105,7 +105,7 @@ jobs:
         env:
           GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
-          title="rarfile v${VERSION}"
+          title="rarfile-native v${VERSION}"
           ghf="--notes-file=./tmp/note.md"
           if test "${DRAFT}" = "true"; then ghf="${ghf} --draft"; fi
           if test "${PRERELEASE}" = "true"; then ghf="${ghf} --prerelease"; fi
