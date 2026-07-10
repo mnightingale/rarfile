@@ -79,7 +79,7 @@ jobs:
       - name: "Prepare"
         run: |
           VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/rarfile/__init__.py)
-          TGZ="rarfile-${VERSION}.tar.gz"
+          TGZ=$(basename dist/*.tar.gz)
 
           # default - gh:release, pypi
           # PRERELEASE -  gh:prerelease, pypi
